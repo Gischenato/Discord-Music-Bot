@@ -36,7 +36,11 @@ client.on("message", async message => {
   }else if(message.content.startsWith(`${prefix}queue`) || message.content.startsWith(`${prefix}q`)){
     queue(message, serverQueue)
     return
-  }else {
+  }else if(message.content.startsWith(`${prefix}help`)){
+    help(message)
+    return
+  }
+  else {
     message.channel.send("Você precisa usar um comando válido!")
   }
 })
@@ -131,10 +135,8 @@ function stop(message, serverQueue) {
 }
 
 function queue(message, serverQueue){
-  console.log("teste1")
   try{
     if(serverQueue.songs[0] === null){
-      console.log("teste2")
       return message.channel.send("Queue vazia") 
     }
   
@@ -144,11 +146,47 @@ function queue(message, serverQueue){
       msg += cont + " - " + element.title + "\n"
       cont++
     })
-    console.log("teste3")
     return message.channel.send(msg)
   }catch{
     return message.channel.send("Queue vazia") 
   }
+}
+
+function help(message){
+  return message.channel.send({ embed: {
+    color: 16711744,
+    author: {
+      name: client.user.username,
+      icon_url: client.user.displayAvatarURL()
+    },
+    title: "Comandos",
+    url: "http://google.com",
+    description: "Lista de comandos do bot.",
+    fields: [{
+        name: "-play || -p",
+        value: "Adiciona uma musica para a queue (deve utilizar url do youtube)."
+      },
+      {
+        name: "-skip",
+        value: "Pula a musica atual."
+      },
+      {
+        name: "-stop",
+        value: "Para de reproduzir musicas e zera a queue."
+      },
+      {
+        name: "-queue",
+        value: "Mostra a lista de musicas na queue."
+      }
+    ],
+    timestamp: new Date(),
+    footer: {
+      icon_url: client.user.displayAvatarURL(),
+      text: "Ajuda para os burros"
+    }
+  }
+})
+
 }
 
 client.login(token)
