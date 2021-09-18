@@ -121,7 +121,7 @@ function play(guild, song) {
 
   const dispatcher = serverQueue.connection
     .play(ytdl(song.url))
-    .on("finish", () => {
+    .on("finish", async () => {
       serverQueue.songs.shift()
       play(guild, serverQueue.songs[0])
     })
@@ -136,7 +136,9 @@ function skip(message, serverQueue) {
       "Você deve estar em um canal de voz para pular a musica!"
     )
   if (!serverQueue)
-    return message.channel.send("Não há nenhuma musica que eu possa pular!")
+    return message.channel.send(
+      "Não há nenhuma musica que eu possa pular!"
+    )
   message.channel.send("Musica pulada!")
   serverQueue.connection.dispatcher.end()
 }
@@ -153,16 +155,37 @@ function stop(message, serverQueue) {
 function queue(message, serverQueue) {
   try {
     if (serverQueue.songs[0] === null) {
-      return message.channel.send("Queue vazia")
+      return message.channel.send(
+        "Queue vazia"
+      )
     }
 
     var cont = 1
-    var msg = ""
+    fields = []
     serverQueue.songs.forEach(element => {
-      message.channel.send(cont + " - " + element.title)
+      fields.push({
+        name: cont,
+        value: element.title
+      })
       cont++
     })
-    return
+    return message.channel.send({
+      embed: {
+        color: 16711744,
+        author: {
+          name: client.user.username,
+          icon_url: client.user.displayAvatarURL()
+        },
+        title: "Queue",
+        description: "Lista de musicas na queue.",
+        fields: fields,
+        timestamp: new Date(),
+        footer: {
+          icon_url: client.user.displayAvatarURL(),
+          text: "somente próximas 25"
+        }
+      }
+    })
   } catch {
     return message.channel.send("Queue vazia")
   }
