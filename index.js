@@ -1,6 +1,10 @@
 const Discord = require("discord.js")
-const { prefix, token } = require("./config.json")
+const {
+  prefix,
+  token
+} = require("./config.json")
 const ytdl = require("ytdl-core")
+const ytpl = require("ytpl")
 
 const client = new Discord.Client()
 
@@ -27,20 +31,19 @@ client.on("message", async message => {
   if (message.content.startsWith(`${prefix}play`) || message.content.startsWith(`${prefix}p`)) {
     execute(message, serverQueue)
     return
-  }else if (message.content.startsWith(`${prefix}skip`)) {
+  } else if (message.content.startsWith(`${prefix}skip`)) {
     skip(message, serverQueue)
     return
-  }else if (message.content.startsWith(`${prefix}stop`)) {
+  } else if (message.content.startsWith(`${prefix}stop`)) {
     stop(message, serverQueue)
     return
-  }else if(message.content.startsWith(`${prefix}queue`) || message.content.startsWith(`${prefix}q`)){
+  } else if (message.content.startsWith(`${prefix}queue`) || message.content.startsWith(`${prefix}q`)) {
     queue(message, serverQueue)
     return
-  }else if(message.content.startsWith(`${prefix}help`)){
+  } else if (message.content.startsWith(`${prefix}help`)) {
     help(message)
     return
-  }
-  else {
+  } else {
     message.channel.send("Você precisa usar um comando válido!")
   }
 })
@@ -60,39 +63,52 @@ async function execute(message, serverQueue) {
     )
   }
 
-  const songInfo = await ytdl.getInfo(args[1])
-  const song = {
-        title: songInfo.videoDetails.title,
-        url: songInfo.videoDetails.video_url,
-   }
-
-  if (!serverQueue) {
-    const queueContruct = {
-      textChannel: message.channel,
-      voiceChannel: voiceChannel,
-      connection: null,
-      songs: [],
-      volume: 5,
-      playing: true
-    }
-
-    musicQueue.set(message.guild.id, queueContruct)
-
-    queueContruct.songs.push(song)
-
-    try {
-      var connection = await voiceChannel.join()
-      queueContruct.connection = connection
-      play(message.guild, queueContruct.songs[0])
-    } catch (err) {
-      console.log(err)
-      musicQueue.delete(message.guild.id)
-      return message.channel.send(err)
-    }
-  } else {
-    serverQueue.songs.push(song)
-    return message.channel.send(`${song.title} foi adicionado à fila!`)
+  const song = []
+  if (message.content.startsWith(prefix + ('p' || 'play') + " https://www.youtube.com/playlist")) {
+    const playlistInfo = await ytpl(args[1])
+    playlistInfo.items.forEach(element => {
+      song.push({
+        title: element.title,
+        url: element.url
+      })
+    });
+  }else {
+    const songInfo = await ytdl.getInfo(args[1])
+    song.push({
+      title: songInfo.videoDetails.title,
+      url: songInfo.videoDetails.video_url,
+    })
   }
+  song.forEach(async element => {
+    if (!serverQueue) {
+      const queueContruct = {
+        textChannel: message.channel,
+        voiceChannel: voiceChannel,
+        connection: null,
+        songs: [],
+        volume: 5,
+        playing: true
+      }
+
+      musicQueue.set(message.guild.id, queueContruct)
+
+      queueContruct.songs.push(element)
+
+      try {
+        var connection = await voiceChannel.join()
+        queueContruct.connection = connection
+        play(message.guild, queueContruct.songs[0])
+      } catch (err) {
+        console.log(err)
+        musicQueue.delete(message.guild.id)
+        return message.channel.send(err)
+      }
+    } else {
+      serverQueue.songs.push(element)
+      return message.channel.send(`${element.title} foi adicionado à fila!`)
+    }
+
+  });
 }
 
 function play(guild, song) {
@@ -134,58 +150,58 @@ function stop(message, serverQueue) {
   serverQueue.connection.dispatcher.end()
 }
 
-function queue(message, serverQueue){
-  try{
-    if(serverQueue.songs[0] === null){
-      return message.channel.send("Queue vazia") 
+function queue(message, serverQueue) {
+  try {
+    if (serverQueue.songs[0] === null) {
+      return message.channel.send("Queue vazia")
     }
-  
+
     var cont = 1
     var msg = ""
     serverQueue.songs.forEach(element => {
-      msg += cont + " - " + element.title + "\n"
+      message.channel.send(cont + " - " + element.title)
       cont++
     })
-    return message.channel.send(msg)
-  }catch{
-    return message.channel.send("Queue vazia") 
+    return
+  } catch {
+    return message.channel.send("Queue vazia")
   }
 }
 
-function help(message){
-  return message.channel.send({ embed: {
-    color: 16711744,
-    author: {
-      name: client.user.username,
-      icon_url: client.user.displayAvatarURL()
-    },
-    title: "Comandos",
-    url: "http://google.com",
-    description: "Lista de comandos do bot.",
-    fields: [{
-        name: "-play || -p",
-        value: "Adiciona uma musica para a queue (deve utilizar url do youtube)."
+function help(message) {
+  return message.channel.send({
+    embed: {
+      color: 16711744,
+      author: {
+        name: client.user.username,
+        icon_url: client.user.displayAvatarURL()
       },
-      {
-        name: "-skip",
-        value: "Pula a musica atual."
-      },
-      {
-        name: "-stop",
-        value: "Para de reproduzir musicas e zera a queue."
-      },
-      {
-        name: "-queue",
-        value: "Mostra a lista de musicas na queue."
+      title: "Comandos",
+      description: "Lista de comandos do bot.",
+      fields: [{
+          name: "-play || -p",
+          value: "Adiciona uma musica para a queue (deve utilizar url do youtube)."
+        },
+        {
+          name: "-skip",
+          value: "Pula a musica atual."
+        },
+        {
+          name: "-stop",
+          value: "Para de reproduzir musicas e zera a queue."
+        },
+        {
+          name: "-queue",
+          value: "Mostra a lista de musicas na queue."
+        }
+      ],
+      timestamp: new Date(),
+      footer: {
+        icon_url: client.user.displayAvatarURL(),
+        text: "Ajuda para os burros"
       }
-    ],
-    timestamp: new Date(),
-    footer: {
-      icon_url: client.user.displayAvatarURL(),
-      text: "Ajuda para os burros"
     }
-  }
-})
+  })
 
 }
 
