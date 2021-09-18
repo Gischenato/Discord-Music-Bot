@@ -27,6 +27,12 @@ client.on("message", async message => {
   if (message.content.startsWith(`${prefix}play`) || message.content.startsWith(`${prefix}p`)) {
     execute(message, serverQueue)
     return
+  }else if (message.content.startsWith(`${prefix}skip`) || message.content.startsWith(`${prefix}s`)) {
+    skip(message, serverQueue)
+    return
+  }else if (message.content.startsWith(`${prefix}stop`)) {
+    stop(message, serverQueue)
+    return
   }else {
     message.channel.send("Você precisa usar um comando válido!")
   }
@@ -101,6 +107,24 @@ function play(guild, song) {
   serverQueue.textChannel.send(`Tocando: **${song.title}**`)
 }
 
+function skip(message, serverQueue) {
+  if (!message.member.voice.channel)
+    return message.channel.send(
+      "Você deve estar em um canal de voz para pular a musica!"
+    )
+  if (!serverQueue)
+    return message.channel.send("Não há nenhuma musica que eu possa pular!")
+  message.channel.send("Musica pulada!")
+  serverQueue.connection.dispatcher.end()
+}
 
+function stop(message, serverQueue) {
+  if (!message.member.voice.channel)
+    return message.channel.send(
+      "Você deve estar um um canal de voz para parar a musica!"
+    )
+  serverQueue.songs = []
+  serverQueue.connection.dispatcher.end()
+}
 
 client.login(token)
