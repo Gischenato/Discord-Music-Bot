@@ -27,11 +27,14 @@ client.on("message", async message => {
   if (message.content.startsWith(`${prefix}play`) || message.content.startsWith(`${prefix}p`)) {
     execute(message, serverQueue)
     return
-  }else if (message.content.startsWith(`${prefix}skip`) || message.content.startsWith(`${prefix}s`)) {
+  }else if (message.content.startsWith(`${prefix}skip`)) {
     skip(message, serverQueue)
     return
   }else if (message.content.startsWith(`${prefix}stop`)) {
     stop(message, serverQueue)
+    return
+  }else if(message.content.startsWith(`${prefix}queue`) || message.content.startsWith(`${prefix}q`)){
+    queue(message, serverQueue)
     return
   }else {
     message.channel.send("Você precisa usar um comando válido!")
@@ -125,6 +128,27 @@ function stop(message, serverQueue) {
     )
   serverQueue.songs = []
   serverQueue.connection.dispatcher.end()
+}
+
+function queue(message, serverQueue){
+  console.log("teste1")
+  try{
+    if(serverQueue.songs[0] === null){
+      console.log("teste2")
+      return message.channel.send("Queue vazia") 
+    }
+  
+    var cont = 1
+    var msg = ""
+    serverQueue.songs.forEach(element => {
+      msg += cont + " - " + element.title + "\n"
+      cont++
+    })
+    console.log("teste3")
+    return message.channel.send(msg)
+  }catch{
+    return message.channel.send("Queue vazia") 
+  }
 }
 
 client.login(token)
